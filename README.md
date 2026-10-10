@@ -1,6 +1,6 @@
-# 📚 OmniComics — Webtoon Reader & Telegram Publisher Platform
+# 📚 OmniComics — Pure Node.js Webtoon Reader & Telegram Publisher Platform
 
-A comic / manga / webtoon platform connected to a Telegram publisher bot. Admins can upload comic pages and chapters directly from Telegram (photos or `.zip` archives) or through the web admin panel. Readers enjoy a responsive reader with continuous vertical Webtoon scroll, Manga page flip, favorites, and automatic reading history tracking.
+A high-performance comic / manga / webtoon platform built 100% in Node.js (Express, SQLite, Adm-Zip, Multer) connected to a Telegram publisher bot. Admins can upload comic pages and chapters directly from Telegram (photos or `.zip` archives) or through the web admin panel. Readers enjoy a responsive reader with continuous vertical Webtoon scroll, Manga page flip, favorites, and automatic reading history tracking.
 
 ---
 
@@ -44,7 +44,7 @@ PORT=8000 /root/comic-bot-platform/start.sh
 
 ### 2. Access Web Interface
 - **Web App & Reader**: [http://localhost:8000](http://localhost:8000)
-- **API Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Start with npm**: `npm start`
 
 ---
 
