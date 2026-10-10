@@ -1,0 +1,80 @@
+/* Custom App Styles */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262f45;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b4668;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Reader Continuous Webtoon Image Strip */
+#readerWebtoonContainer img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  margin-bottom: 2px;
+}
+
+/* Comic card hover effects */
+.comic-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.comic-card:hover {
+  transform: translateY(-6px);
+}
+
+/* Active genre pill */
+.genre-pill.active {
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+}
+
+/* Chat bubble styling for telegram simulator */
+.sim-msg-user {
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  color: #ffffff;
+  border-radius: 18px 18px 4px 18px;
+  margin-left: auto;
+}
+
+.sim-msg-bot {
+  background: #1f2937;
+  color: #e5e7eb;
+  border-radius: 18px 18px 18px 4px;
+  border: 1px solid #374151;
+}

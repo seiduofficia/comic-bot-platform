@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniComics — Webtoon Reader & Telegram Publisher</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/static/style.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              900: '#4c1d95',
+            },
+            dark: {
+              bg: '#0b0f19',
+              card: '#111827',
+              border: '#1f2937',
+              muted: '#374151'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#0b0f19] text-gray-100 min-h-screen font-sans flex flex-col antialiased selection:bg-purple-600 selection:text-white">
+
+  <!-- TOP NAVBAR -->
+  <header class="sticky top-0 z-40 bg-[#0b0f19]/90 backdrop-blur-md border-b border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Logo -->
+      <a href="#" onclick="app.showView('catalog'); return false;" class="flex items-center gap-2.5 group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-600/30 group-hover:scale-105 transition">
+          <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">OmniComics</span>
+          <span class="text-[10px] block font-mono uppercase tracking-wider text-purple-400 font-semibold -mt-1">Webtoon & Bot</span>
+        </div>
+      </a>
+
+      <!-- Search Bar -->
+      <div class="flex-1 max-w-md hidden md:block">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input 
+            type="text" 
+            id="searchInput"
+            placeholder="Search comics, authors, genres..." 
+            oninput="app.handleSearch(this.value)"
+            class="w-full pl-10 pr-4 py-2 bg-gray-900/80 border border-gray-800 rounded-xl text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition placeholder-gray-500 text-gray-200"
+          >
+          <button id="clearSearchBtn" onclick="app.clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Actions -->
+      <div class="flex items-center gap-2">
+        <!-- Favorites Button -->
+        <button onclick="app.showModal('favoritesModal')" class="relative p-2 text-gray-300 hover:text-white hover:bg-gray-800/80 rounded-xl transition flex items-center gap-1.5" title="Favorites">
+          <i data-lucide="heart" class="w-5 h-5 text-pink-500"></i>
+          <span class="hidden sm:inline text-xs font-medium">Favorites</span>
+          <span id="favoritesBadge" class="hidden absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-bold bg-pink-600 text-white rounded-full">0</span>
+        </button>
+
+        <!-- Reading History Button -->
+        <button onclick="app.showModal('historyModal')" class="relative p-2 text-gray-300 hover:text-white hover:bg-gray-800/80 rounded-xl transition flex items-center gap-1.5" title="Reading History">
+          <i data-lucide="history" class="w-5 h-5 text-indigo-400"></i>
+          <span class="hidden sm:inline text-xs font-medium">History</span>
+          <span id="historyBadge" class="hidden absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-bold bg-indigo-600 text-white rounded-full">0</span>
+        </button>
+
+        <!-- Telegram Publisher Admin Button -->
+        <button onclick="app.showView('admin')" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-900/30 flex items-center gap-2 transition hover:scale-102">
+          <i data-lucide="send" class="w-4 h-4 text-cyan-300"></i>
+          <span class="hidden sm:inline">Bot & Admin</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- VIEW 1: CATALOG VIEW -->
+    <div id="catalogView" class="space-y-8">
+      
+      <!-- HERO FEATURED BANNER -->
+      <section id="heroBanner" class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-950/60 via-gray-900 to-indigo-950/60 border border-purple-900/40 p-6 md:p-10 shadow-2xl">
+        <div class="relative z-10 max-w-2xl space-y-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-600/20 border border-purple-500/40 text-purple-300 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+            FEATURED WEBTOON
+          </div>
+          <h1 id="heroTitle" class="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">Shadow Sovereign</h1>
+          <p id="heroDesc" class="text-gray-300 text-sm sm:text-base line-clamp-3 leading-relaxed">
+            In a world overrun by dimensional rifts, Jin-Woo was mocked as the weakest hunter of all mankind. But when a mysterious double dungeon claims his team, a surreal quest window appears...
+          </p>
+          <div class="flex flex-wrap items-center gap-3 pt-2">
+            <button id="heroReadBtn" class="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-lg shadow-purple-600/40 flex items-center gap-2 transition transform active:scale-95">
+              <i data-lucide="play" class="w-4 h-4 fill-white"></i> Start Reading
+            </button>
+            <button id="heroDetailsBtn" class="px-5 py-3 rounded-xl bg-gray-800/80 hover:bg-gray-700/80 text-gray-200 font-semibold text-sm border border-gray-700 flex items-center gap-2 transition">
+              <i data-lucide="info" class="w-4 h-4"></i> View Details
+            </button>
+            <div class="hidden sm:flex items-center gap-2 text-xs text-cyan-400 font-mono bg-cyan-950/40 px-3 py-2 rounded-lg border border-cyan-800/40">
+              <i data-lucide="bot" class="w-4 h-4"></i> Telegram Bot Upload Ready
+            </div>
+          </div>
+        </div>
+
+        <!-- Banner Glow Background decoration -->
+        <div class="absolute -right-20 -bottom-20 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute right-10 top-1/2 -translate-y-1/2 hidden lg:block opacity-70 hover:opacity-100 transition duration-500">
+          <img id="heroCoverImg" src="/uploads/covers/cover_shadow-sovereign.jpg" alt="Featured Cover" class="w-56 h-80 object-cover rounded-2xl shadow-2xl border-2 border-purple-500/30 transform rotate-2 hover:rotate-0 transition duration-300">
+        </div>
+      </section>
+
+      <!-- GENRE FILTERS -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-5 h-5 text-yellow-400"></i> Explore Library
+          </h2>
+          <span id="comicsCountBadge" class="text-xs text-gray-400 font-mono">Loading...</span>
+        </div>
+
+        <!-- Genre Pill Buttons -->
+        <div id="genreFilters" class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <button onclick="app.setGenre('All')" class="genre-pill active px-4 py-1.5 rounded-full text-xs font-semibold bg-purple-600 text-white shadow-sm transition whitespace-nowrap">All</button>
+          <button onclick="app.setGenre('Action')" class="genre-pill px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-800 transition whitespace-nowrap">Action</button>
+          <button onclick="app.setGenre('Fantasy')" class="genre-pill px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-800 transition whitespace-nowrap">Fantasy</button>
+          <button onclick="app.setGenre('Sci-Fi')" class="genre-pill px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-800 transition whitespace-nowrap">Sci-Fi</button>
+          <button onclick="app.setGenre('Adventure')" class="genre-pill px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-800 transition whitespace-nowrap">Adventure</button>
+          <button onclick="app.setGenre('Supernatural')" class="genre-pill px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-800 transition whitespace-nowrap">Supernatural</button>
+          <button onclick="app.setGenre('Cultivation')" class="genre-pill px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-800 transition whitespace-nowrap">Cultivation</button>
+        </div>
+
+        <!-- COMIC GRID -->
+        <div id="comicGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 pt-2">
+          <!-- Populated by app.js -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyCatalogState" class="hidden text-center py-16 space-y-4">
+          <i data-lucide="book-x" class="w-16 h-16 mx-auto text-gray-600"></i>
+          <p class="text-gray-400 text-base font-medium">No comics match your search or filter.</p>
+          <button onclick="app.clearSearch(); app.setGenre('All')" class="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-semibold">Reset Filters</button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- VIEW 2: COMIC DETAIL VIEW -->
+    <div id="comicDetailView" class="hidden space-y-8 animate-fade-in">
+      
+      <!-- Back button -->
+      <button onclick="app.showView('catalog')" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Catalog
+      </button>
+
+      <!-- Comic Header Card -->
+      <div class="bg-gray-900/90 rounded-3xl border border-gray-800 overflow-hidden p-6 sm:p-8 flex flex-col md:flex-row gap-8">
+        <!-- Cover Art -->
+        <div class="w-full sm:w-64 flex-shrink-0 mx-auto sm:mx-0">
+          <div class="relative group rounded-2xl overflow-hidden shadow-2xl border border-gray-700/60 aspect-[2/3]">
+            <img id="detailCover" src="" alt="Comic Cover" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
+              <span id="detailStatus" class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-green-500/20 text-green-300 border border-green-500/30">Ongoing</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Details Info -->
+        <div class="flex-1 space-y-5">
+          <div>
+            <h1 id="detailTitle" class="text-2xl sm:text-4xl font-extrabold text-white">Title</h1>
+            <p id="detailAuthor" class="text-purple-400 text-sm font-medium mt-1">By Author</p>
+          </div>
+
+          <!-- Genres -->
+          <div id="detailGenres" class="flex flex-wrap gap-2">
+            <!-- Genre pills -->
+          </div>
+
+          <!-- Synopsis -->
+          <div>
+            <h3 class="text-xs uppercase font-bold tracking-wider text-gray-400 mb-2">Synopsis</h3>
+            <p id="detailDescription" class="text-gray-300 text-sm leading-relaxed whitespace-pre-line"></p>
+          </div>
+
+          <!-- Metrics -->
+          <div class="flex flex-wrap gap-6 py-2 border-y border-gray-800 text-xs text-gray-400">
+            <div><span class="block font-bold text-gray-200 text-base" id="detailChaptersCount">0</span> Chapters</div>
+            <div><span class="block font-bold text-gray-200 text-base" id="detailViewsCount">0</span> Views</div>
+            <div><span class="block font-bold text-gray-200 text-base">Free HD</span> Quality</div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-wrap items-center gap-3 pt-2">
+            <button id="detailReadFirstBtn" class="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-lg shadow-purple-600/30 flex items-center gap-2 transition active:scale-95">
+              <i data-lucide="book-open" class="w-4 h-4"></i> Read Chapter 1
+            </button>
+            <button id="detailFavoriteBtn" onclick="app.toggleFavoriteCurrent()" class="px-5 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-pink-400 font-semibold text-sm border border-gray-700 flex items-center gap-2 transition">
+              <i data-lucide="heart" class="w-4 h-4"></i> <span>Add to Favorites</span>
+            </button>
+            <button onclick="app.shareToTelegram()" class="px-4 py-3 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 font-semibold text-sm border border-blue-500/30 flex items-center gap-2 transition">
+              <i data-lucide="share-2" class="w-4 h-4"></i> Share
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chapter List Section -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i data-lucide="list" class="w-5 h-5 text-indigo-400"></i> Chapters List
+          </h2>
+          <span id="detailChapterListCount" class="text-xs text-gray-400"></span>
+        </div>
+
+        <div id="detailChaptersContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- Chapter items populated here -->
+        </div>
+      </section>
+
+    </div>
+
+    <!-- VIEW 3: FULLSCREEN COMIC READER -->
+    <div id="readerView" class="hidden fixed inset-0 z-50 bg-[#070a12] flex flex-col overflow-hidden">
+      
+      <!-- Top Sticky Reader Bar -->
+      <header class="h-14 bg-gray-950/95 backdrop-blur-md border-b border-gray-800 px-4 flex items-center justify-between text-gray-200 z-10 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <button onclick="app.closeReader()" class="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition" title="Exit Reader">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+          </button>
+          <div class="truncate max-w-[180px] sm:max-w-md">
+            <span id="readerComicTitle" class="text-xs font-semibold text-purple-400 block truncate">Comic Title</span>
+            <span id="readerChapterTitle" class="text-sm font-bold text-white truncate block">Chapter 1</span>
+          </div>
+        </div>
+
+        <!-- Controls Center / Right -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Chapter Selector Dropdown -->
+          <select id="readerChapterSelect" onchange="app.switchChapterFromSelect(this.value)" class="bg-gray-900 border border-gray-700 text-xs rounded-lg px-2.5 py-1.5 text-gray-200 focus:outline-none focus:border-purple-500">
+            <!-- options populated dynamically -->
+          </select>
+
+          <!-- Reading Mode Switcher -->
+          <button id="readerModeToggle" onclick="app.toggleReaderMode()" class="px-2.5 py-1.5 bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-lg text-xs font-medium flex items-center gap-1.5 transition text-gray-300" title="Switch reading mode">
+            <i data-lucide="columns" class="w-4 h-4"></i>
+            <span id="readerModeText" class="hidden sm:inline">Webtoon Scroll</span>
+          </button>
+
+          <!-- Bookmark Current Chapter -->
+          <button onclick="app.bookmarkCurrentChapter()" class="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-yellow-400 transition" title="Bookmark Chapter">
+            <i data-lucide="bookmark" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Fullscreen Toggle -->
+          <button onclick="app.toggleFullscreen()" class="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition hidden sm:block" title="Toggle Fullscreen">
+            <i data-lucide="maximize" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- READER MAIN CONTENT AREA -->
+      <div id="readerScrollContainer" class="flex-1 overflow-y-auto overflow-x-hidden relative flex flex-col items-center bg-[#05070d] scroll-smooth">
+        
+        <!-- Webtoon Mode: Vertical Strip -->
+        <div id="readerWebtoonContainer" class="w-full max-w-3xl flex flex-col items-center py-4 space-y-0.5">
+          <!-- Images inserted here -->
+        </div>
+
+        <!-- Manga Mode: Single Page Turn -->
+        <div id="readerMangaContainer" class="hidden w-full h-full flex flex-col items-center justify-center p-4">
+          <div class="relative max-w-3xl max-h-full flex items-center justify-center">
+            <img id="mangaPageImg" src="" alt="Manga Page" class="max-h-[80vh] w-auto object-contain rounded-lg shadow-2xl">
+            
+            <!-- Click zones for next / prev -->
+            <button onclick="app.prevMangaPage()" class="absolute left-0 top-0 bottom-0 w-1/3 opacity-0 hover:opacity-100 flex items-center justify-start pl-4 text-white/70 hover:text-white transition">
+              <div class="bg-black/60 p-3 rounded-full"><i data-lucide="chevron-left" class="w-6 h-6"></i></div>
+            </button>
+            <button onclick="app.nextMangaPage()" class="absolute right-0 top-0 bottom-0 w-1/3 opacity-0 hover:opacity-100 flex items-center justify-end pr-4 text-white/70 hover:text-white transition">
+              <div class="bg-black/60 p-3 rounded-full"><i data-lucide="chevron-right" class="w-6 h-6"></i></div>
+            </button>
+          </div>
+
+          <!-- Manga Page Navigator -->
+          <div class="mt-4 flex items-center gap-4 text-xs text-gray-400">
+            <button onclick="app.prevMangaPage()" class="px-3 py-1.5 bg-gray-900 border border-gray-700 rounded-lg hover:text-white">Previous</button>
+            <span id="mangaPageIndicator" class="font-mono text-purple-400 font-bold">Page 1 / 5</span>
+            <button onclick="app.nextMangaPage()" class="px-3 py-1.5 bg-gray-900 border border-gray-700 rounded-lg hover:text-white">Next</button>
+          </div>
+        </div>
+
+        <!-- End of Chapter Navigation Bar -->
+        <div id="chapterEndNav" class="w-full max-w-3xl py-12 px-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-800 mt-8">
+          <button id="prevChapterBtn" onclick="app.loadPrevChapter()" class="w-full sm:w-auto px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-gray-300 rounded-xl text-xs font-semibold border border-gray-700 flex items-center justify-center gap-2 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Previous Chapter
+          </button>
+          <span class="text-xs text-gray-500 font-mono">You've reached the end of this chapter!</span>
+          <button id="nextChapterBtn" onclick="app.loadNextChapter()" class="w-full sm:w-auto px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 transition">
+            Next Chapter <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Bottom Reading Progress Bar -->
+      <div class="h-1 bg-gray-800 w-full overflow-hidden flex-shrink-0">
+        <div id="readingProgressBar" class="h-full bg-gradient-to-r from-purple-500 to-indigo-500 w-0 transition-all duration-150"></div>
+      </div>
+    </div>
+
+    <!-- VIEW 4: BOT & ADMIN DASHBOARD -->
+    <div id="adminView" class="hidden space-y-8 animate-fade-in">
+      
+      <!-- Admin Top Banner -->
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <button onclick="app.showView('catalog')" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-2 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Catalog
+          </button>
+          <h1 class="text-3xl font-extrabold text-white flex items-center gap-3">
+            <i data-lucide="bot" class="w-8 h-8 text-cyan-400"></i> Telegram Bot & Publisher Hub
+          </h1>
+          <p class="text-gray-400 text-sm mt-1">
+            Connect your Telegram Bot to upload comics & chapters directly, or manage and test everything here.
+          </p>
+        </div>
+
+        <!-- Quick Live Status Pill -->
+        <div id="botStatusPill" class="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-gray-900 border border-gray-800 text-xs">
+          <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-ping"></span>
+          <span id="botStatusText" class="font-semibold text-gray-300">Checking Bot Status...</span>
+        </div>
+      </div>
+
+      <!-- GRID: 2 COLUMNS (Bot Setup & Quick Web Uploader) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- CARD 1: Telegram Bot Credentials & Controls -->
+        <div class="bg-gray-900/90 rounded-3xl border border-gray-800 p-6 sm:p-8 space-y-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="send" class="w-5 h-5 text-cyan-400"></i> Telegram Bot Configuration
+            </h2>
+            <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">Long Polling API</span>
+          </div>
+
+          <div class="space-y-4 text-xs">
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">Telegram Bot Token (from @BotFather)</label>
+              <input 
+                type="password" 
+                id="cfgBotToken" 
+                placeholder="1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ..." 
+                class="w-full px-3.5 py-2.5 bg-gray-950 border border-gray-800 rounded-xl font-mono text-gray-200 focus:outline-none focus:border-cyan-500"
+              >
+              <p class="text-[11px] text-gray-500 mt-1">Get this in 30 seconds by messaging <code class="text-cyan-400">@BotFather</code> on Telegram and typing <code>/newbot</code>.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-medium text-gray-300 mb-1">Admin Secret Password</label>
+                <input 
+                  type="text" 
+                  id="cfgAdminSecret" 
+                  value="comicadmin123" 
+                  class="w-full px-3.5 py-2.5 bg-gray-950 border border-gray-800 rounded-xl font-mono text-gray-200 focus:outline-none focus:border-cyan-500"
+                >
+                <p class="text-[10px] text-gray-500 mt-0.5">Send <code>/setadmin &lt;secret&gt;</code> in Telegram to become admin.</p>
+              </div>
+
+              <div>
+                <label class="block font-medium text-gray-300 mb-1">Admin Telegram Chat ID (Optional)</label>
+                <input 
+                  type="text" 
+                  id="cfgAdminChatId" 
+                  placeholder="e.g. 123456789" 
+                  class="w-full px-3.5 py-2.5 bg-gray-950 border border-gray-800 rounded-xl font-mono text-gray-200 focus:outline-none focus:border-cyan-500"
+                >
+                <p class="text-[10px] text-gray-500 mt-0.5">Your Telegram ID (get it with /start from the bot).</p>
+              </div>
+            </div>
+
+            <!-- Bot Actions -->
+            <div class="pt-2 flex flex-wrap gap-3">
+              <button onclick="app.saveBotConfig()" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold transition flex items-center gap-2">
+                <i data-lucide="save" class="w-4 h-4"></i> Save Settings
+              </button>
+              <button id="btnStartBot" onclick="app.startTelegramBot()" class="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition flex items-center gap-2">
+                <i data-lucide="play" class="w-4 h-4"></i> Start Bot Polling
+              </button>
+              <button id="btnStopBot" onclick="app.stopTelegramBot()" class="hidden px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition flex items-center gap-2">
+                <i data-lucide="square" class="w-4 h-4"></i> Stop Bot
+              </button>
+            </div>
+          </div>
+
+          <!-- Telegram Bot Command Guide -->
+          <div class="bg-gray-950 rounded-2xl p-4 border border-gray-800/80 space-y-2 text-xs">
+            <h4 class="font-bold text-gray-300 flex items-center gap-1.5">
+              <i data-lucide="terminal" class="w-4 h-4 text-purple-400"></i> Supported Telegram Bot Commands
+            </h4>
+            <ul class="space-y-1.5 text-gray-400 font-mono text-[11px]">
+              <li><span class="text-cyan-400">/start</span> - Welcome menu, status & your Chat ID</li>
+              <li><span class="text-cyan-400">/comics</span> - List all published comics with web reader links</li>
+              <li><span class="text-cyan-400">/stats</span> - Total views, comics, chapters & pages</li>
+              <li><span class="text-cyan-400">/setadmin &lt;secret&gt;</span> - Claim admin publisher rights</li>
+              <li><span class="text-purple-400">/newcomic</span> - Create comic series & upload cover image</li>
+              <li><span class="text-purple-400">/addchapter</span> - Upload comic chapter (send photos or a <b>.zip</b> file!)</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- CARD 2: Direct Web Uploader (Alternative to Bot) -->
+        <div class="bg-gray-900/90 rounded-3xl border border-gray-800 p-6 sm:p-8 space-y-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="upload-cloud" class="w-5 h-5 text-purple-400"></i> Direct Web Chapter Uploader
+            </h2>
+            <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-400 border border-purple-800">Web Publishing</span>
+          </div>
+
+          <form id="webUploadForm" onsubmit="app.handleWebUpload(event)" class="space-y-4 text-xs">
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">Select Comic Series</label>
+              <select id="uploadComicSelect" required class="w-full px-3.5 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-gray-200 focus:outline-none focus:border-purple-500">
+                <!-- options populated dynamically -->
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block font-medium text-gray-300 mb-1">Chapter Number</label>
+                <input type="number" step="0.5" id="uploadChapterNumber" required placeholder="e.g. 4" class="w-full px-3.5 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-gray-200 focus:outline-none focus:border-purple-500">
+              </div>
+              <div>
+                <label class="block font-medium text-gray-300 mb-1">Chapter Title (Optional)</label>
+                <input type="text" id="uploadChapterTitle" placeholder="e.g. Clash of Titans" class="w-full px-3.5 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-gray-200 focus:outline-none focus:border-purple-500">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-medium text-gray-300 mb-1">Upload Pages (.ZIP archive or Images)</label>
+              <div class="border-2 border-dashed border-gray-800 hover:border-purple-500/50 rounded-2xl p-6 text-center cursor-pointer transition bg-gray-950/50" onclick="document.getElementById('uploadFileInput').click()">
+                <i data-lucide="file-archive" class="w-8 h-8 mx-auto text-purple-400 mb-2"></i>
+                <p class="text-gray-300 font-semibold" id="uploadFileLabel">Click or drop a .ZIP file of comic pages</p>
+                <p class="text-[11px] text-gray-500 mt-1">Or select multiple .jpg / .png images</p>
+                <input type="file" id="uploadFileInput" accept=".zip,.cbz,image/*" multiple class="hidden" onchange="app.handleFileSelect(this)">
+              </div>
+            </div>
+
+            <button type="submit" id="uploadSubmitBtn" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/30 transition flex items-center justify-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4"></i> Publish Chapter to Web Reader
+            </button>
+          </form>
+
+          <!-- Quick Create New Comic Modal Trigger -->
+          <div class="pt-2 border-t border-gray-800 flex items-center justify-between">
+            <span class="text-xs text-gray-400">Need to create a brand new comic series first?</span>
+            <button onclick="app.showModal('newComicModal')" class="px-3.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-xl border border-gray-700 flex items-center gap-1.5 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Comic Series
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CARD 3: TELEGRAM BOT SIMULATOR & TEST CONSOLE (Test without a real bot token!) -->
+      <div class="bg-gray-900/90 rounded-3xl border border-gray-800 p-6 sm:p-8 space-y-6">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="message-square" class="w-5 h-5 text-indigo-400"></i> Interactive Telegram Bot Simulator & Test Console
+            </h2>
+            <p class="text-xs text-gray-400 mt-0.5">Test the Telegram bot flows directly in your browser without needing a bot token right away!</p>
+          </div>
+          <span class="text-[10px] font-mono px-3 py-1 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800">In-Browser Simulated Client</span>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="bg-gray-950 rounded-2xl border border-gray-800 flex flex-col h-[420px] overflow-hidden">
+          
+          <!-- Chat Header -->
+          <div class="bg-gray-900/90 px-4 py-3 border-b border-gray-800 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold text-xs">
+                <i data-lucide="bot" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="font-bold text-white block">OmniComics Publisher Bot</span>
+                <span class="text-[10px] text-green-400 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> Simulator Online
+                </span>
+              </div>
+            </div>
+            <button onclick="app.resetSimulator()" class="text-gray-400 hover:text-white transition" title="Clear chat history">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Chat Messages Body -->
+          <div id="simChatBody" class="flex-1 p-4 overflow-y-auto space-y-3 font-sans text-xs">
+            <!-- Messages added dynamically -->
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="px-4 py-2 bg-gray-900/50 border-t border-gray-800/80 flex items-center gap-2 overflow-x-auto text-[11px] scrollbar-none">
+            <button onclick="app.sendSimMessage('/start')" class="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition whitespace-nowrap">/start</button>
+            <button onclick="app.sendSimMessage('/comics')" class="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition whitespace-nowrap">/comics</button>
+            <button onclick="app.sendSimMessage('/stats')" class="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition whitespace-nowrap">/stats</button>
+            <button onclick="app.sendSimMessage('/setadmin comicadmin123')" class="px-2.5 py-1 rounded-lg bg-yellow-950 text-yellow-300 hover:bg-yellow-900 transition whitespace-nowrap">👑 /setadmin</button>
+            <button onclick="app.sendSimMessage('/newcomic')" class="px-2.5 py-1 rounded-lg bg-purple-950 text-purple-300 hover:bg-purple-900 transition whitespace-nowrap">➕ /newcomic</button>
+            <button onclick="app.sendSimMessage('/addchapter')" class="px-2.5 py-1 rounded-lg bg-indigo-950 text-indigo-300 hover:bg-indigo-900 transition whitespace-nowrap">📑 /addchapter</button>
+            <button onclick="app.sendSimMessage('/cancel')" class="px-2.5 py-1 rounded-lg bg-red-950 text-red-300 hover:bg-red-900 transition whitespace-nowrap">❌ /cancel</button>
+          </div>
+
+          <!-- Chat Input Bar -->
+          <form onsubmit="app.handleSimSubmit(event)" class="p-3 bg-gray-900 border-t border-gray-800 flex items-center gap-2">
+            <button type="button" onclick="document.getElementById('simFileInput').click()" class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition" title="Attach image or zip to simulate Telegram file send">
+              <i data-lucide="paperclip" class="w-4 h-4"></i>
+            </button>
+            <input type="file" id="simFileInput" class="hidden" onchange="app.handleSimFileSelect(this)">
+            <input 
+              type="text" 
+              id="simInputText" 
+              placeholder="Type command or message (e.g. /start, /addchapter)..." 
+              class="flex-1 px-3.5 py-2 bg-gray-950 border border-gray-800 rounded-xl text-xs text-gray-200 focus:outline-none focus:border-indigo-500"
+            >
+            <button type="submit" class="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition">
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+          </form>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODALS -->
+
+  <!-- 1. FAVORITES MODAL -->
+  <div id="favoritesModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl max-w-xl w-full p-6 space-y-6 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="heart" class="w-5 h-5 text-pink-500 fill-pink-500"></i> My Favorite Comics
+        </h3>
+        <button onclick="app.closeModal('favoritesModal')" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="favoritesListContainer" class="flex-1 overflow-y-auto space-y-3 pr-1">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. READING HISTORY MODAL -->
+  <div id="historyModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl max-w-xl w-full p-6 space-y-6 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="history" class="w-5 h-5 text-indigo-400"></i> Reading History & Bookmarks
+        </h3>
+        <button onclick="app.closeModal('historyModal')" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="historyListContainer" class="flex-1 overflow-y-auto space-y-3 pr-1">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. NEW COMIC CREATION MODAL -->
+  <div id="newComicModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-5 h-5 text-purple-400"></i> Create New Comic Series
+        </h3>
+        <button onclick="app.closeModal('newComicModal')" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="app.handleCreateComicSubmit(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-medium text-gray-300 mb-1">Comic Title</label>
+          <input type="text" id="newComicTitle" required placeholder="e.g. Return of the Demon Blade" class="w-full px-3.5 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-gray-200 focus:outline-none focus:border-purple-500">
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-300 mb-1">Author / Studio</label>
+          <input type="text" id="newComicAuthor" placeholder="e.g. Studio Mirage" class="w-full px-3.5 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-gray-200 focus:outline-none focus:border-purple-500">
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-300 mb-1">Genres (comma separated)</label>
+          <input type="text" id="newComicGenres" value="Action, Fantasy, Adventure" class="w-full px-3.5 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-gray-200 focus:outline-none focus:border-purple-500">
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-300 mb-1">Description / Synopsis</label>
+          <textarea id="newComicDesc" rows="3" placeholder="Enter comic story summary..." class="w-full px-3.5 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-gray-200 focus:outline-none focus:border-purple-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-300 mb-1">Cover Image (Optional)</label>
+          <input type="file" id="newComicCoverFile" accept="image/*" class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer">
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/30 transition flex items-center justify-center gap-2">
+          Create Comic
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Scripts -->
+  <script src="/static/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      app.init();
+    });
+  </script>
+</body>
+</html>

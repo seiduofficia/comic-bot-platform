@@ -1,0 +1,19 @@
+{
+  "name": "comic-bot-platform",
+  "version": "1.0.0",
+  "description": "A comic / manga / webtoon platform connected to a Telegram publisher bot. Admins can upload comic pages and chapters directly from Telegram (photos or `.zip` archives) or through the web admin panel. Readers enjoy a responsive reader with continuous vertical Webtoon scroll, Manga page flip, favorites, and automatic reading history tracking.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "multer": "^2.4.0",
+    "sqlite3": "^6.0.1"
+  }
+}
